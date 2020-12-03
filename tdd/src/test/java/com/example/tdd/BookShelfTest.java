@@ -1,18 +1,17 @@
 package com.example.tdd;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.*;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.Year;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.asList;
-//import static org.junit.Assert.*;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,11 +24,14 @@ public class BookShelfTest {
     private Book effectiveJava;
     private Book codeComplete;
     private Book mythicalManMonth;
+    private Book cleanCode;
 
     @BeforeEach
     void init() {
         shelf = new BookShelf();
         effectiveJava = new Book("Joshua Bloch", "Effective Java", LocalDate.of(2008,
+                Month.MAY, 8));
+        cleanCode = new Book("Robert C. Martin", "Clean Code", LocalDate.of(2008,
                 Month.MAY, 8));
         codeComplete = new Book("Steve McConnel", "Code Complete", LocalDate.of(2004,
                 Month.JUNE, 9));
@@ -43,41 +45,51 @@ public class BookShelfTest {
         System.out.println("Working on test class " + testInfo.getDisplayName());
     }
 
-    @Test
-    @DisplayName("is empty when no book is added to it")
-    public void shelfEmptyWhenNoBookAddedTest(TestInfo testInfo) {
-        List<Book> books = shelf.books();
-        logger.info("Bookshelf is empty");
-        assertTrue(books.isEmpty());
+    @Nested
+    @DisplayName("is empty")
+    class IsEmpty {
+        @Test
+        @DisplayName("is empty when no book is added to it")
+        public void shelfEmptyWhenNoBookAddedTest(TestInfo testInfo) {
+            List<Book> books = shelf.books();
+            logger.info("Bookshelf is empty");
+            assertTrue(books.isEmpty());
+        }
+
+        @Test
+        @DisplayName("returns nothing when add is called without a book")
+        void emptyBookShelfWhenAddIsCalledWithoutBook(){
+            shelf.add();
+            List<Book> books = shelf.books();
+            logger.info("Bookshelf should be empty");
+            assertTrue(books.isEmpty());
+        }
     }
 
-    @Test
-    @DisplayName("has two books when two books added")
-    void bookShelfHasTwoBookWhenTwoBooksAdded(){
-        shelf.add(effectiveJava, codeComplete);
-        List<Book> books = shelf.books();
-        assertEquals(2, books.size(), "Bookshelf has two books");
-    }
+    @Nested
+    @DisplayName("returns a book object")
+    class HasBook {
+        @Test
+        @DisplayName("has two books when two books added")
+        void bookShelfHasTwoBookWhenTwoBooksAdded(){
+            shelf.add(effectiveJava, codeComplete);
+            List<Book> books = shelf.books();
+            assertEquals(2, books.size(), "Bookshelf has two books");
+        }
 
-    @Test
-    @DisplayName("returns nothing when add is called without a book")
-    void emptyBookShelfWhenAddIsCalledWithoutBook(){
-        shelf.add();
-        List<Book> books = shelf.books();
-        logger.info("Bookshelf should be empty");
-        assertTrue(books.isEmpty());
-    }
 
-    @Test
-    @DisplayName("Immutable Tests")
-    void booksReturnedFromBookIsImmutableForClient(){
-        shelf.add(effectiveJava, codeComplete);
-        List<Book> books = shelf.books();
-        try {
-            books.add(mythicalManMonth);
-            fail("Should not be able to add book to books");
-        } catch (Exception e){
-            assertTrue(e instanceof UnsupportedOperationException);
+
+        @Test
+        @DisplayName("Immutable Tests")
+        void booksReturnedFromBookIsImmutableForClient(){
+            shelf.add(effectiveJava, codeComplete);
+            List<Book> books = shelf.books();
+            try {
+                books.add(mythicalManMonth);
+                fail("Should not be able to add book to books");
+            } catch (Exception e){
+                assertTrue(e instanceof UnsupportedOperationException);
+            }
         }
     }
 
@@ -109,11 +121,41 @@ public class BookShelfTest {
         assertThat(books).isSortedAccordingTo(reversed);
     }
 
-//    @Test
-//    @DisplayName("Publication Date Arrangement")
-//    void bookShelfArrangedWithProvidedPubDate(){
-//        shelf.add(effectiveJava, codeComplete, mythicalManMonth);
-//
-//    }
+    @Test
+    @DisplayName("books inside shelf are grouped by publication year")
+    void groupBooksInsideShelfByPublicationYear(){
+        shelf.add(effectiveJava, codeComplete, mythicalManMonth, cleanCode);
+        Map<Year, List<Book>> booksByPublicationYear = shelf.groupByPublicationYear();
 
+        assertThat(booksByPublicationYear)
+                .containsKey(Year.of(2008))
+                .containsValue(Arrays.asList(effectiveJava, cleanCode));
+
+        assertThat(booksByPublicationYear)
+                .containsKey(Year.of(2004))
+                .containsValues(singletonList(codeComplete));
+
+        assertThat(booksByPublicationYear)
+                .containsKey(Year.of(1975))
+                .containsValues(singletonList(mythicalManMonth));
+    }
+
+    @Test
+    @DisplayName("books inside bookshelf are grouped according to user provided criteria(group by author name)")
+    void groupBooksByUserProvidedCriteria() {
+        shelf.add(effectiveJava, codeComplete, mythicalManMonth, cleanCode);
+        Map<String, List<Book>> booksByAuthor = shelf.groupBy(Book::getAuthor);
+        assertThat(booksByAuthor)
+                .containsKey("Joshua Bloch")
+                .containsValues(singletonList(effectiveJava));
+        assertThat(booksByAuthor)
+                .containsKey("Steve McConnel")
+                .containsValues(singletonList(codeComplete));
+        assertThat(booksByAuthor)
+                .containsKey("Phillips Brooks")
+                .containsValues(singletonList(mythicalManMonth));
+        assertThat(booksByAuthor)
+                .containsKey("Robert C. Martin")
+                .containsValues(singletonList(cleanCode));
+    }
 }
