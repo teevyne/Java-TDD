@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/PersonalTDDPractice.iml" filepath="$PROJECT_DIR$/PersonalTDDPractice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tdd/tdd.iml" filepath="$PROJECT_DIR$/tdd/tdd.iml" />
     </modules>
   </component>
 </project>

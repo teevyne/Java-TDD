@@ -1,4 +1,4 @@
-package main;
+package com.example.tdd;
 
 import java.time.LocalDate;
 
